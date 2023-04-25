@@ -3,11 +3,48 @@ import json
 import threading
 import os
 
+dictionary = {
+            "Binance":
+              {
+                "BTC": {
+                    "Bid_Price": 0,
+                    "Bid_Quantity": 0,
+                    "Ask_Price": 0,
+                    "Ask_Quantity": 0
+                    }
+                }
+            # "Coinbase":
+            #   {
+            #     "Bid_Price": 0,
+            #     "Bid_Quantity": 0,
+            #     "Ask_Price": 0,
+            #     "Ask_Quantity": 0
+            #     },
+            # "Gate":
+            #   {
+            #     "Bid_Price": 0,
+            #     "Bid_Quantity": 0,
+            #     "Ask_Price": 0,
+            #     "Ask_Quantity": 0
+            #     }
+            }
 class BinanceUS:
     def on_message(self, ws, message):
-        data = json.loads(message)
-        print("BINANCE:", data['data']['c'])
-        # print('BTC price:', data['c'])
+       data = json.loads(message)
+       if 'b' and 'B' in data['data']:
+        if dictionary['Binance']['BTC']['Bid_Price'] != data['data']['b']:
+            dictionary['Binance']['BTC']['Bid_Price'] = data['data']['b']
+            print(dictionary)
+        if dictionary['Binance']['BTC']['Bid_Quantity'] != data['data']['B']:
+            dictionary['Binance']['BTC']['Bid_Quantity'] = data['data']['B']
+
+       if 'a' and 'A' in data['data']:
+        if dictionary['Binance']['BTC']["Ask_Price"] != data['data']['a']:
+            dictionary['Binance']['BTC']['Ask_Price'] = data['data']['a']
+        if dictionary['Binance']['BTC']["Ask_Quantity"] != data['data']['A']:
+            dictionary['Binance']['BTC']['Ask_Quantity'] = data['data']['A']
+        # print("BINANCE Best Ask price: ", data['data']['a'])
+        # print("BINANCE Best Ask quantity: ", data['data']['A'])
 
     def on_error(self, ws, error):
         print(error)
@@ -18,7 +55,9 @@ class BinanceUS:
     def on_open(self, ws):
         print('WebSocket connection established')
         #Getting price from Binance US using WebSockets
-        ws.send(json.dumps({'method': 'SUBSCRIBE', 'params': ['btcusd@ticker'], 'id': 1}))
+        data = json.dumps({'method': 'SUBSCRIBE', 'params': ['btcusd@bookTicker'], 'id': 1})
+        # print("DATA IN ON_OPEN", data)
+        ws.send(data)
 
     def run(self):
         ws = websocket.WebSocketApp('wss://stream.binance.us:9443/stream', on_message=self.on_message, on_error=self.on_error, on_close=self.on_close)
@@ -77,12 +116,12 @@ class GateIO:
 
 if __name__ == '__main__':
     binance = BinanceUS()
-    coinbase = Coinbase()
-    gateio = GateIO()
+    # coinbase = Coinbase()
+    # gateio = GateIO()
     threads = [
         threading.Thread(target=binance.run),
-        threading.Thread(target=coinbase.run),
-        threading.Thread(target=gateio.run)
+        # threading.Thread(target=coinbase.run),
+        # threading.Thread(target=gateio.run)
     ]
     for thread in threads:
         thread.start()
