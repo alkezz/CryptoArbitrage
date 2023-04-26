@@ -1,7 +1,10 @@
 import websocket
 import json
+import websockets
+import asyncio
 import threading
 import os
+
 
 dictionary = {
             "Binance":
@@ -12,22 +15,54 @@ dictionary = {
                     "Ask_Price": 0,
                     "Ask_Quantity": 0
                     }
+                },
+            "Coinbase":
+              {
+                "Bid_Price": 0,
+                "Bid_Quantity": 0,
+                "Ask_Price": 0,
+                "Ask_Quantity": 0
+                },
+            "Gate":
+              {
+                "Bid_Price": 0,
+                "Bid_Quantity": 0,
+                "Ask_Price": 0,
+                "Ask_Quantity": 0
                 }
-            # "Coinbase":
-            #   {
-            #     "Bid_Price": 0,
-            #     "Bid_Quantity": 0,
-            #     "Ask_Price": 0,
-            #     "Ask_Quantity": 0
-            #     },
-            # "Gate":
-            #   {
-            #     "Bid_Price": 0,
-            #     "Bid_Quantity": 0,
-            #     "Ask_Price": 0,
-            #     "Ask_Quantity": 0
-            #     }
             }
+
+# # define the on_message callback function
+# def on_message(ws, message):
+#     # parse the incoming message as a JSON object
+#     # process the data as needed
+#     # ...
+#     # send a response back to the client
+#     ws.send(json.dumps(dictionary))
+
+# # create a WebSocket server on a specific port
+# ws = websocket.WebSocketApp('localhost', 8000)
+
+# # start the server
+# ws.run_forever()
+
+# class SendData:
+#     def on_message(self, ws, message):
+#         ws.send(json.dumps(dictionary))
+
+#     def on_error(self, ws, error):
+#         print(error)
+
+#     def on_close(self, ws, close_status, close_reason):
+#         print('WebSocket connection closed')
+
+#     def on_open(self, ws):
+#         print('WebSocket connection established')
+
+#     def run(self):
+#         ws = websocket.WebSocketApp('ws://localhost:8000/')
+#         ws.on_open = self.on_open
+#         ws.run_forever()
 class BinanceUS:
     def on_message(self, ws, message):
        data = json.loads(message)
@@ -114,12 +149,25 @@ class GateIO:
         ws.on_open = self.on_open
         ws.run_forever()
 
+async def send_dictionary(websocket, path):
+    # convert dictionary to JSON string
+    json_dict = json.dumps(dictionary)
+    # send JSON string to the React app
+    await websocket.send(json_dict)
+
+async def main():
+    async with websockets.serve(send_dictionary, "localhost", 8000):
+        await asyncio.Future()
+
+
 if __name__ == '__main__':
     binance = BinanceUS()
+    # send_data = SendData()
     # coinbase = Coinbase()
     # gateio = GateIO()
     threads = [
         threading.Thread(target=binance.run),
+        # threading.Thread(target=send_data.run)
         # threading.Thread(target=coinbase.run),
         # threading.Thread(target=gateio.run)
     ]
