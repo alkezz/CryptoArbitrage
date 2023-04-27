@@ -65,7 +65,7 @@ dictionary = {
 #         ws.run_forever()
 class BinanceUS:
     def on_message(self, ws, message):
-       data = json.loads(message)
+       data = json.dumps({'method': 'SUBSCRIBE', 'params': ['btcusd@bookTicker'], 'id': 1})
        if 'b' and 'B' in data['data']:
         if dictionary['Binance']['BTC']['Bid_Price'] != data['data']['b']:
             dictionary['Binance']['BTC']['Bid_Price'] = data['data']['b']
