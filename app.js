@@ -1,14 +1,36 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const PORT = 8000;
+require('dotenv').config();
 const cors = require('cors')
 const app = express();
 // const server = http.createServer(app);
 // const wss = new WebSocket.Server({ server });
 const axios = require('axios')
-
+const VOLUME_THRESHOLD = 0.25;
+const PORT = 8000;
 app.use(cors())
+let filteredCoinsArr
+app.get("/all-coins", async (req, res) => {
+    try {
+        const response = await axios.get(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?sort=volume_24h`, {
+            headers: {
+                'X-CMC_PRO_API_KEY': process.env.COIN_MARKETCAP_API_KEY,
+            },
+        });
+
+        const data = response.data.data;
+        const filteredCoins = data.filter((coin) => {
+            return coin.quote.USD.volume_24h > 100000;
+        });
+        const coinSymbols = filteredCoins.map((coin) => {
+            return coin.symbol;
+        });
+        res.send(coinSymbols);
+    } catch (error) {
+        console.error(error);
+    }
+})
 app.get('/coins', (req, res) => {
     axios.get('https://api.binance.us/api/v3/exchangeInfo')
         .then(response => {
@@ -35,6 +57,51 @@ app.get('/coins', (req, res) => {
         .catch(error => {
             console.error(error);
             res.status(500).send('Error fetching coin list');
+        });
+});
+
+app.get("/bitfinex", async (req, res) => {
+    try {
+        const response = await axios.get(`https://api-pub.bitfinex.com/v2/tickers?symbols=ALL`);
+        const data = response.data;
+        const filteredData = data.filter((coin) => {
+            return coin[0].includes("USD");
+        });
+        const formattedData = filteredData.reduce((acc, cur) => {
+            const symbol = cur[0].substring(1);
+            acc[symbol] = {
+                lastPrice: cur[7],
+                volume: cur[8],
+            };
+            return acc;
+        }, {});
+        res.send(formattedData);
+    } catch (error) {
+        console.error(error);
+    }
+})
+
+app.get('/gateio', async (req, res) => {
+    axios.get('https://api.gateio.ws/api/v4/spot/tickers')
+        .then(response => {
+            const data = response.data;
+            const filteredData = data.filter((coin) => {
+                return coin.currency_pair.includes('USDT');
+            });
+            // console.log(filteredData)
+            const tickerData = { GateIO: {} };
+            filteredData.forEach((coinData) => {
+                const coin = coinData.currency_pair.split("_")[0];
+                tickerData.GateIO[coin] = {
+                    price: coinData.last,
+                    volume: coinData.base_volume
+                };
+            });
+            res.json(tickerData);
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).send('Error fetching ticker data');
         });
 });
 
