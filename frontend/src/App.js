@@ -62,7 +62,6 @@ function App() {
                   gateIOPrice = gateioTickerData[row] ? gateioTickerData[row].price : 0
                   bitfinexPrice = bitfinexTickerData[`${row}USD`] ? bitfinexTickerData[`${row}USD`].lastPrice : 0
                   const prices = [binancePrice, gateIOPrice, bitfinexPrice];
-                  console.log(prices, "PRICES")
                   const filteredPrices = prices.filter(price => price !== 0 && price !== "0.00000000");
                   const sortedPrices = filteredPrices.sort((a, b) => a - b);
                   const smallestNonZeroPrice = sortedPrices[0];
