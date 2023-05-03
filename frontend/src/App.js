@@ -47,32 +47,55 @@ function App() {
               <th>Binance</th>
               <th>Gate.IO</th>
               <th>Bitfinex</th>
+              <th>Percent Difference</th>
             </tr>
           </thead>
           <tbody>
-            {Object.values(allCoins).map((row, index) => {
-              let binancePrice = 0;
-              let gateIOPrice = 0;
-              let bitfinexPrice = 0;
-              if (binanceTickerData && gateioTickerData && bitfinexTickerData) {
-                console.log("PRICE", bitfinexTickerData[`${row}USD`])
-                binancePrice = binanceTickerData[row] ? binanceTickerData[row].askPrice : 0;
-                gateIOPrice = gateioTickerData[row] ? gateioTickerData[row].price : 0
-                bitfinexPrice = bitfinexTickerData[`${row}USD`] ? bitfinexTickerData[`${row}USD`].lastPrice : 0
-              } else {
-                binancePrice = <CircularProgress sx={{ color: "red" }} />
-                gateIOPrice = <CircularProgress sx={{ color: "red" }} />
-                bitfinexPrice = <CircularProgress sx={{ color: "red" }} />
-              }
-              return (
-                <tr key={index}>
-                  <td>{row}/USD</td>
+            {Object.values(allCoins)
+              .map((row) => {
+                let binancePrice = 0;
+                let gateIOPrice = 0;
+                let bitfinexPrice = 0;
+                let percent = 0;
+                if (binanceTickerData && gateioTickerData && bitfinexTickerData) {
+                  binancePrice = binanceTickerData[row] ? binanceTickerData[row].askPrice : 0;
+                  gateIOPrice = gateioTickerData[row] ? gateioTickerData[row].price : 0
+                  bitfinexPrice = bitfinexTickerData[`${row}USD`] ? bitfinexTickerData[`${row}USD`].lastPrice : 0
+                  const prices = [binancePrice, gateIOPrice, bitfinexPrice];
+                  console.log(prices, "PRICES")
+                  const filteredPrices = prices.filter(price => price !== 0 && price !== "0.00000000");
+                  const sortedPrices = filteredPrices.sort((a, b) => a - b);
+                  const smallestNonZeroPrice = sortedPrices[0];
+                  const largestPrice = sortedPrices[sortedPrices.length - 1];
+                  const percentDifference = (largestPrice - smallestNonZeroPrice) / smallestNonZeroPrice * 100
+                  if (percentDifference.toFixed(2) !== Infinity && percentDifference.toFixed(2) !== 0.00 && !isNaN(percentDifference)) {
+                    percent = percentDifference.toFixed(2)
+                  }
+                } else {
+                  binancePrice = <CircularProgress sx={{ color: "red" }} />
+                  gateIOPrice = <CircularProgress sx={{ color: "red" }} />
+                  bitfinexPrice = <CircularProgress sx={{ color: "red" }} />
+                  percent = <CircularProgress sx={{ color: "red" }} />
+                }
+                return {
+                  coin: row,
+                  binancePrice,
+                  gateIOPrice,
+                  bitfinexPrice,
+                  percent
+                };
+              })
+              .filter(({ percent }) => percent !== 0) // exclude rows with 0 percent difference
+              .sort((a, b) => b.percent - a.percent) // sort by percent difference in descending order
+              .map(({ coin, binancePrice, gateIOPrice, bitfinexPrice, percent }) => (
+                <tr key={coin}>
+                  <td>{coin}/USD</td>
                   <td>{binancePrice}</td>
                   <td>{gateIOPrice}</td>
                   <td>{bitfinexPrice}</td>
+                  <td>{percent}%</td>
                 </tr>
-              );
-            })}
+              ))}
           </tbody>
         </table>
       </div>
