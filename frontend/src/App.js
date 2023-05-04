@@ -18,7 +18,7 @@ function App() {
     const bitfinexData = await bitfinexRes.json()
     setBitfinexTickerData(bitfinexData)
   }
-  console.log(bitfinexTickerData, "BITFINEX")
+  console.log(binanceTickerData, "BINANCE")
   useEffect(() => {
     const getAllCoins = async () => {
       const res = await fetch('http://localhost:8000/all-coins')
@@ -27,7 +27,6 @@ function App() {
     }
     getAllCoins()
   }, [])
-  console.log(gateioTickerData)
   let mainEle
   let loadingEle
   if (!binanceTickerData) {

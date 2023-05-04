@@ -36,11 +36,23 @@ app.get('/coins', (req, res) => {
         .then(response => {
             const coins = response.data.symbols.filter(symbol => symbol.quoteAsset === 'USD')
                 .map(symbol => symbol.baseAsset);
-            const promises = coins.map(coin => {
+            const tickerPromises = coins.map(coin => {
                 return axios.get(`https://api.binance.us/api/v3/ticker/24hr?symbol=${coin}USD`)
                     .then(response => response.data);
             });
-            Promise.all(promises)
+            const depthPromises = coins.map(coin => {
+                return axios.get('https://api.binance.us/api/v3/depth', {
+                    params: {
+                        symbol: `${coin}USD`,
+                        limit: 100
+                    }
+                })
+                    .then(response => {
+                        const buyOrders = response.data.bids;
+                        return { coin, buyOrders };
+                    });
+            });
+            Promise.all(tickerPromises, depthPromises)
                 .then(data => {
                     const tickerData = { Binance: {} };
                     data.forEach((coinData, index) => {
@@ -53,6 +65,19 @@ app.get('/coins', (req, res) => {
                     console.error(error);
                     res.status(500).send('Error fetching ticker data');
                 });
+            // Promise.all(depthPromises)
+            //     .then(data => {
+            //         const buyOrdersData = { Binance: {} };
+            //         data.forEach(coinData => {
+            //             const { coin, buyOrders } = coinData;
+            //             buyOrdersData.Binance[coin] = buyOrders;
+            //         });
+            //         res.json(buyOrdersData);
+            //     })
+            //     .catch(error => {
+            //         console.error(error);
+            //         res.status(500).send('Error fetching buy orders data');
+            //     });
         })
         .catch(error => {
             console.error(error);
